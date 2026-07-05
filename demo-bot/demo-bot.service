@@ -1,0 +1,17 @@
+[Unit]
+Description=Demo Approval Telegram Bot
+After=network-online.target
+After=demo-auth.service
+PartOf=demo-auth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /home/liam/src/demo/demo-bot/bot.mjs
+Restart=on-failure
+RestartSec=10
+WorkingDirectory=/home/liam/src/demo/demo-bot
+# Credentials loaded from sops exec by the parent service
+Environment=DEMO_ADMIN_KEY_FILE=/home/liam/.demo/admin_key
+
+[Install]
+WantedBy=default.target

@@ -9,117 +9,246 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
          background: var(--bg); color: var(--fg); line-height: 1.6; padding: 2rem; max-width: 960px; margin: 0 auto; }
-  h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #f0f6fc; }
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; color: #f0f6fc; }
   h1 small { font-size: 1rem; color: #8b949e; font-weight: 400; }
   p.sub { color: #8b949e; margin-bottom: 2rem; }
   .demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-  .card { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  .card { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 0; overflow: hidden; }
+  .card-header { padding: 1.25rem 1.25rem 0.75rem; }
+  .card-actions { padding: 0.75rem 1.25rem 1.25rem; border-top: 1px solid #1c2128; }
   .card h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
   .card h2 a { color: var(--accent); text-decoration: none; }
   .card h2 a:hover { text-decoration: underline; }
   .card p { font-size: 0.875rem; color: #8b949e; margin-bottom: 0.75rem; }
   .tag { display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
-         background: #1f2937; color: #9ca3af; margin-right: 0.25rem; }
+         background: #1f2937; color: #9ca3af; margin-right: 0.25rem; margin-bottom: 0.25rem; }
   .tag.ready { background: #0f3b1e; color: #3fb950; }
   .tag.build { background: #3b1f0f; color: #d29922; }
   .status { color: #8b949e; font-size: 0.8rem; }
-  .landing { text-align: center; padding: 4rem 0; }
-  .landing h1 { font-size: 3rem; }
-  .token-form { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 2rem 0; }
-  .token-form h3 { margin-bottom: 1rem; }
-  .token-form label { display: block; margin: 0.5rem 0 0.25rem; color: #8b949e; }
-  .token-form input, .token-form select { width: 100%; padding: 0.5rem; background: #0d1117;
-         border: 1px solid var(--border); border-radius: 4px; color: var(--fg); }
-  .token-form button { margin-top: 1rem; padding: 0.5rem 1.5rem; background: #238636;
-         color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-  .token-form button:hover { background: #2ea043; }
-  .token-result { background: #0d1117; border: 1px solid #238636; border-radius: 4px; padding: 0.75rem;
-                  margin-top: 1rem; word-break: break-all; display: none; }
+  .hero { text-align: center; padding: 3rem 0 1rem; }
+  .hero h1 { font-size: 2.5rem; }
+  .hero .sub { font-size: 1rem; }
+
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+  .modal-backdrop.open { display: flex; align-items: center; justify-content: center; }
+  .modal { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;
+           max-width: 480px; width: 90%; }
+  .modal h3 { margin-bottom: 1rem; }
+  .modal label { display: block; color: #8b949e; margin: 0.75rem 0 0.25rem; font-size: 0.85rem; }
+  .modal input, .modal textarea { width: 100%; padding: 0.5rem; background: #0d1117; border: 1px solid var(--border);
+         border-radius: 4px; color: var(--fg); font-size: 0.9rem; }
+  .modal textarea { min-height: 60px; resize: vertical; }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
+
+  .btn { padding: 0.5rem 1.25rem; border: none; border-radius: 4px; font-size: 0.85rem; cursor: pointer; }
+  .btn-primary { background: #238636; color: #fff; }
+  .btn-primary:hover { background: #2ea043; }
+  .btn-secondary { background: #1f2937; color: #9ca3af; border: 1px solid var(--border); }
+  .btn-secondary:hover { background: #374151; color: var(--fg); }
+  .btn-danger { background: #da3633; color: #fff; }
+  .btn-danger:hover { background: #f85149; }
+
+  .status-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem;
+                  margin-left: 0.5rem; }
+  .status-badge.live { background: #0f3b1e; color: #3fb950; }
+  .status-badge.waiting { background: #3b1f0f; color: #d29922; }
+  .status-badge.denied { background: #3b1f0f; color: #f85149; }
+
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: #161b22; border: 1px solid #238636;
+           border-radius: 8px; padding: 1rem; display: none; max-width: 400px; z-index: 200; }
+  .toast.error { border-color: #f85149; }
+  .toast.show { display: block; }
 </style>
 </head>
 <body>
 
-<div class="landing" id="landing">
-  <h1>Demo Gallery <small>β</small></h1>
-  <p class="sub">Live demos of projects by LiamDGray — time-limited access for prospective clients.</p>
-  <p class="sub">← You need a token. If you're a client, check your email.</p>
+<div class="hero" id="landing">
+  <h1>⚡ Demo Gallery <small>β</small></h1>
+  <p class="sub">Live demos of projects by LiamDGray. Request access to try any demo — approval is typically instant.</p>
 </div>
 
-<div class="token-form" id="token-form">
-  <h3>🔑 Enter Access Token</h3>
-  <label for="token-input">Paste the token from your invitation link</label>
-  <input type="text" id="token-input" placeholder="Paste your token URL or just the token..." />
-  <button onclick="redeemToken()">Access Demos</button>
-  <div id="token-error" style="color:#f85149;margin-top:0.5rem;display:none;"></div>
+<div class="demo-grid" id="demo-grid"></div>
+
+<!-- Request Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Request Access</h3>
+    <p style="color:#8b949e;font-size:0.85rem;margin-bottom:0.5rem;" id="modal-demo-name"></p>
+    <label>Your email (optional)</label>
+    <input id="modal-email" placeholder="prospect@acme.com" />
+    <label>What are you interested in? (optional)</label>
+    <textarea id="modal-reason" placeholder="e.g., Evaluating for our CAD pipeline..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit" onclick="submitRequest()">Request Access</button>
+    </div>
+    <div id="modal-status" style="margin-top:0.75rem;display:none;padding:0.5rem;border-radius:4px;"></div>
+  </div>
 </div>
 
-<div id="demos" style="display:none;">
-  <h2 style="margin-bottom:1rem;">Available Demos</h2>
-  <div class="demo-grid" id="demo-grid"></div>
+<!-- Toast -->
+<div class="toast" id="toast">
+  <p id="toast-text"></p>
 </div>
 
 <script>
   const DEMOS = [
     { id: 'geo-csg',     name: 'GeoCSG',         desc: 'Photo → editable CAD. 3D scan reconstruction via geometric algebra.',             status: 'ready', tags: ['FastAPI', 'SaaS'] },
-    { id: 'voice-chat',  name: 'Voice Chat',     desc: 'WebSocket voice interface PWA — push-to-talk or VAD with TTS.',                   status: 'ready', tags: ['PWA', 'WebSocket'] },
+    { id: 'agent-debate',name: 'Agent Debate',   desc: 'Watch two AI personas debate a proposition with an AI judge.',                     status: 'ready', tags: ['MCP', 'LLM'] },
+    { id: 'name-check',  name: 'Name Check',     desc: 'Check domain + USPTO trademark conflicts for your product name.',                   status: 'ready', tags: ['Utility'] },
+    { id: 'voice-chat',  name: 'Voice Chat',     desc: 'WebSocket voice interface PWA — push-to-talk or VAD with TTS.',                   status: 'build', tags: ['PWA', 'WebSocket'] },
     { id: 'realpeep',    name: 'RealPeep',       desc: 'Anonymous provenance & mesh consensus — ZK identity, hash chains.',               status: 'build', tags: ['Dashboard', 'ZK'] },
-    { id: 'name-check',  name: 'Name Check',     desc: 'Check domain + USPTO trademark conflicts for your product idea.',                   status: 'ready', tags: ['Utility'] },
     { id: 'afterlife',   name: 'Afterlife',      desc: 'x402 micropayment proxy vending. Pay-per-use proxies with Ed25519 leases.',        status: 'build', tags: ['Payments'] },
     { id: 'artcall',     name: 'ArtCall',        desc: 'Self-healing scrapers for artist grant/residency calls.',                           status: 'ready', tags: ['Scraping'] },
-    { id: 'agent-debate',name: 'Agent Debate',   desc: 'Multi-round structured debates between two AI perspectives.',                       status: 'ready', tags: ['MCP', 'LLM'] },
     { id: 'behavioral',  name: 'Behavioral Mim.', desc: 'Record your browsing, compute behavioral distributions, sample at automation time.', status: 'build', tags: ['Analysis'] },
     { id: 'sigstead',    name: 'Sigstead',       desc: 'Cryptographic provenance for AI agent decisions.',                                  status: 'ready', tags: ['Security'] },
     { id: 'loc3net',     name: 'Loc3Net',        desc: 'Turn your phone into a residential IP exit node for cloud agents.',                 status: 'build', tags: ['Networking'] },
   ];
 
-  function getToken() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('token') || '';
-  }
+  let currentDemo = null;
+  let pollInterval = null;
 
-  function renderDemos(token) {
+  function renderGallery() {
     const grid = document.getElementById('demo-grid');
-    grid.innerHTML = DEMOS.map(d => `
-      <div class="card">
-        <h2><a href="/${d.id}?token=${token}" target="_blank">${d.name}</a></h2>
-        <p>${d.desc}</p>
-        <div>
-          <span class="tag ${d.status}">${d.status === 'ready' ? '⭐ Ready' : '🔨 Building'}</span>
-          ${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+    grid.innerHTML = DEMOS.map(d => {
+      const statusText = d.status === 'ready' ? '⭐ Ready' : '🔨 Building';
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h2>${d.name}</h2>
+            <p>${d.desc}</p>
+            <div>
+              <span class="tag ${d.status}">${statusText}</span>
+              ${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="openModal('${d.id}')">🔑 Request Access</button>
+          </div>
         </div>
-      </div>
-    `).join('');
-    document.getElementById('demos').style.display = 'block';
-    document.getElementById('token-form').style.display = 'none';
-    document.getElementById('landing').style.display = 'none';
+      `;
+    }).join('');
   }
 
-  function redeemToken() {
-    const input = document.getElementById('token-input').value.trim();
-    const err = document.getElementById('token-error');
-    // Try to extract token from URL, or use raw token
-    let token;
+  function openModal(demoId) {
+    currentDemo = demoId;
+    const demo = DEMOS.find(d => d.id === demoId);
+    document.getElementById('modal-title').textContent = `🔑 Request Access: ${demo.name}`;
+    document.getElementById('modal-demo-name').textContent = demo.desc;
+    document.getElementById('modal-email').value = '';
+    document.getElementById('modal-reason').value = '';
+    document.getElementById('modal-status').style.display = 'none';
+    document.getElementById('modal-submit').disabled = false;
+    document.getElementById('modal-submit').textContent = 'Request Access';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    currentDemo = null;
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  }
+
+  async function submitRequest() {
+    const email = document.getElementById('modal-email').value.trim();
+    const reason = document.getElementById('modal-reason').value.trim();
+    const btn = document.getElementById('modal-submit');
+    btn.disabled = true;
+    btn.textContent = 'Requesting...';
+
     try {
-      const url = new URL(input);
-      token = url.searchParams.get('token') || input;
-    } catch {
-      token = input;
+      const res = await fetch('/api/request-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demo_id: currentDemo, email, reason }),
+      });
+      const data = await res.json();
+      if (data.request_id) {
+        showStatus('pending', data.request_id);
+        pollInterval = setInterval(() => pollStatus(data.request_id), 2000);
+      } else {
+        showError(data.error || 'Request failed');
+      }
+    } catch (e) {
+      showError(e.message);
     }
-    if (!token) {
-      err.textContent = 'Please enter a token.';
-      err.style.display = 'block';
-      return;
-    }
-    err.style.display = 'none';
-    renderDemos(token);
   }
 
-  // Auto-redeem if token in URL
-  const initialToken = getToken();
-  if (initialToken) {
-    document.getElementById('token-input').value = initialToken;
-    renderDemos(initialToken);
+  function showStatus(status, requestId) {
+    const el = document.getElementById('modal-status');
+    el.style.display = 'block';
+    if (status === 'pending') {
+      el.style.background = '#3b1f0f';
+      el.style.border = '1px solid #d29922';
+      el.innerHTML = `<p style="color:#d29922;">⏳ Request sent. Waiting for approval... <span id="poll-dots"></span></p>`;
+      animateDots();
+    } else if (status === 'approved') {
+      el.style.background = '#0f3b1e';
+      el.style.border = '1px solid #3fb950';
+      el.innerHTML = `<p style="color:#3fb950;">✅ Approved! <a href="${status}" id="access-link" style="color:#58a6ff;" target="_blank">Enter demo →</a></p>`;
+      document.getElementById('modal-submit').textContent = '✅ Access Granted';
+      setTimeout(() => { window.open(status, '_blank'); }, 500);
+    } else if (status === 'denied') {
+      el.style.background = '#3b1f0f';
+      el.style.border = '1px solid #f85149';
+      el.innerHTML = `<p style="color:#f85149;">❌ Request denied.</p>`;
+      document.getElementById('modal-submit').textContent = 'Try Again';
+    }
   }
+
+  function showError(msg) {
+    const el = document.getElementById('modal-status');
+    el.style.display = 'block';
+    el.style.background = '#3b1f0f';
+    el.style.border = '1px solid #f85149';
+    el.innerHTML = `<p style="color:#f85149;">❌ ${msg}</p>`;
+    document.getElementById('modal-submit').disabled = false;
+    document.getElementById('modal-submit').textContent = 'Retry';
+  }
+
+  async function pollStatus(requestId) {
+    try {
+      const res = await fetch(`/api/request-status/${requestId}`);
+      const data = await res.json();
+      if (data.status === 'approved') {
+        clearInterval(pollInterval);
+        pollInterval = null;
+        showStatus(data.url, requestId);
+        showToast('✅ Access granted! Opening demo...');
+      } else if (data.status === 'denied') {
+        clearInterval(pollInterval);
+        pollInterval = null;
+        showStatus('denied', requestId);
+        showToast('❌ Access denied.', true);
+      }
+    } catch {
+      // keep polling
+    }
+  }
+
+  function animateDots() {
+    let dots = 0;
+    const el = document.getElementById('poll-dots');
+    if (!el) return;
+    setInterval(() => {
+      dots = (dots + 1) % 4;
+      if (el) el.textContent = '.'.repeat(dots);
+    }, 500);
+  }
+
+  function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    const text = document.getElementById('toast-text');
+    text.textContent = msg;
+    toast.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { toast.classList.remove('show'); }, 5000);
+  }
+
+  // Init
+  renderGallery();
 </script>
 </body>
 </html>

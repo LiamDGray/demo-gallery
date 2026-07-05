@@ -4,62 +4,111 @@
 
 demo.liamdgray.com {
 
-    # ── Auth Layer ──────────────────────────────────────────
-    # Every request is validated by the token-auth service
-    forward_auth localhost:8090 {
-        uri /verify
-        header_up X-Original-URI {uri}
-        header_up X-Original-Method {method}
+    # ── Public API routes (no token required) ────────────────
+    # These must come BEFORE the auth handle block
+    handle_path /api/* {
+        reverse_proxy localhost:8090
     }
 
-    # ── Public route: landing page ──────────────────────────
-    handle / {
+    # ── Landing page (no token required) ─────────────────────
+    handle {
         root * /home/liam/src/demo/gallery
         file_server
     }
 
-    # ── Demo backends ───────────────────────────────────────
-    handle_path /geo-csg/* {
+    # ── Token auth for all demo routes ───────────────────────
+    # Every request to /geo-csg, /name-check, etc. must have a valid token
+    route /geo-csg/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8001
     }
 
-    handle_path /voice-chat/* {
+    route /voice-chat/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8766
     }
 
-    handle_path /name-check/* {
+    route /name-check/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8002
     }
 
-    handle_path /realpeep/* {
-        reverse_proxy localhost:8003
-    }
-
-    handle_path /afterlife/* {
-        reverse_proxy localhost:8004
-    }
-
-    handle_path /artcall/* {
-        reverse_proxy localhost:8005
-    }
-
-    handle_path /agent-debate/* {
+    route /agent-debate/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8006
     }
 
-    handle_path /behavioral/* {
+    route /realpeep/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
+        reverse_proxy localhost:8003
+    }
+
+    route /afterlife/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
+        reverse_proxy localhost:8004
+    }
+
+    route /artcall/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
+        reverse_proxy localhost:8005
+    }
+
+    route /behavioral/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8007
     }
 
-    handle_path /sigstead/* {
+    route /sigstead/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8008
     }
 
-    handle_path /loc3net/* {
+    route /loc3net/* {
+        forward_auth localhost:8090 {
+            uri /verify
+            header_up X-Original-URI {uri}
+            header_up X-Original-Method {method}
+        }
         reverse_proxy localhost:8009
     }
 
-    # ── Admin: token management ─────────────────────────────
+    # ── Admin: token management (X-Admin-Key header auth, no token needed) ─
     handle_path /admin/* {
         reverse_proxy localhost:8090
     }
