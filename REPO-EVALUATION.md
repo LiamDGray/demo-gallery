@@ -112,19 +112,45 @@ doh-proxy, drives, langclaw, legacydata, minions, scraper, secrets-email2mqtt, t
 
 ## Priority Recommendations for demo.liamdgray.com
 
-### Phase 1: Low-hanging fruit (week 1)
-1. **geo-csg** — Most complete web app, SaaS-ready, auth already built
-2. **name-conflict-check** — Simple Node server, useful tool anyone can try
-3. **voice-chat** — PWA with speech, very interactive, good for demos
-4. **artcall** — Already deployed, just add to launcher
+### Phase 1: Ready to deploy (week 1) — mostly done
+1. **geo-csg** ✅ Architected, SaaS chassis already works. Need to:
+   - Create `demo/simple-core` branch
+   - Replace ML pipeline with deterministic edge-detect+extrusion (OpenCV, no PyTorch)
+   - Keep auth/queue/Stripe/frontend — the SaaS chassis is the demo value
+2. **name-conflict-check** ✅ **HTTP wrapper built** (`demo-server.mjs` + `demo.html`)
+   - Token-level enforcement: issue tokens with `max_uses: 2`
+   - Client-side counter shows remaining checks
+   - Proxied at `/name-check` → :8002
+3. **agent-debate** ✅ **HTTP wrapper built** (`demo-server.mjs` + `demo.html`)
+   - Runs actual multi-round LLM debates via OpenRouter
+   - 4 presets (Tech, Philosophy, Policy, Fun) + custom proposition
+   - Proxied at `/agent-debate` → :8006
+4. **artcall** — Already deployed at artcall.liamdgray.com, just add to gallery landing page
+
+### Phase 1b: Needs decision
+5. **voice-chat** ⚠️ 14 bugs found (see voice-chat investigation report)
+   - Architecture is sound, ~80% of bugs are in frontend JS
+   - **~2-3 days to fix** for demo-ready
+   - Key fix: streaming subprocess for Hermes (eliminates biggest UX flaw)
+   - If skip: Pipecat, Vocode, or LiveKit Agents could replace the backend
 
 ### Phase 2: Build web wrappers (week 2-3)
-5. **realpeep-dashboard** — Provenance chain visualizer (flag ship)
-6. **afterlife-relay** — Live proxy relay status + payment flow demo
-7. **behavioral-mimicry** — Upload behavior recording, see analysis
-8. **agent-debate-http** — Wrap MCP server in HTTP for interactive demos
+6. **realpeep-dashboard** — Provenance chain visualizer (flagship project)
+7. **afterlife-relay** — Live proxy relay status + x402 payment flow demo
+8. **behavioral-mimicry** — Upload behavior recording, see analysis distributions
+9. **sigstead** — Verify an agent decision record online
 
 ### Phase 3: Niche but compelling (week 3+)
-9. **solverprog/reasoning-trace** — Step-through inference viewer
-10. **loc3net/map** — Network topology + latency dashboard
-11. **TrackXY/video** — Upload video, track objects (if GPU available)
+10. **solverprog/reasoning-trace** — Step-through inference viewer
+11. **loc3net/map** — Network topology + latency dashboard
+12. **TrackXY/video** — Upload video, track objects (needs GPU)
+
+### Infrastructure ready
+- **Repo**: `~/src/demo/` with full architecture plan (SECURITY-AND-PLAN.md)
+- **Proxy**: Caddy recommended over Rust turnkey options (same memory safety, simpler config, forward_auth is 1 line vs ~200 lines Rust)
+- **Sandboxing**: systemd.exec template unit (zero extra processes) preferred over bwrap
+  - 10 demos = ~2-5MB overhead via systemd vs ~12-17MB extra processes via bwrap
+  - systemd covers: ProtectHome=tmpfs, PrivateNetwork=true, DynamicUser=true, ProtectProc=invisible
+  - bwrap optionally for defense-in-depth on sensitive demos
+- **Auth**: Token-auth service + optional Telegram bot for visitor→approval→token flow
+- **Analytics**: Lightweight event logging endpoint (POST /api/event + GET /api/stats), SQLite storage
