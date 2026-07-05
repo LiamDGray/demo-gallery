@@ -13,7 +13,6 @@ Endpoints:
 """
 
 import hashlib
-import json
 import os
 import sqlite3
 import time
@@ -21,7 +20,7 @@ import uuid
 from pathlib import Path
 
 import uvicorn
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -29,7 +28,7 @@ from pydantic import BaseModel
 
 SECRET = os.environ.get("DEMO_AUTH_SECRET", os.urandom(32).hex())
 DB_PATH = os.environ.get("DEMO_DB_PATH", str(Path.home() / ".demo" / "auth.db"))
-ADMIN_CHAT_ID = os.environ.get("TG_CHAT_ID", "")
+ADMIN_CHAT_ID = os.environ.get("DEMO_APPROVAL_CHAT_ID", "")
 
 app = FastAPI(title="Demo Auth & Analytics")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])

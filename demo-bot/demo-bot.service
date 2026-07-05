@@ -11,7 +11,7 @@ Restart=on-failure
 RestartSec=10
 WorkingDirectory=/home/liam/src/demo/demo-bot
 # Credentials loaded from sops exec by the parent service
-Environment=DEMO_ADMIN_KEY_FILE=/home/liam/.demo/admin_key
+Environment=DEMO_APPROVAL_ADMIN_KEY_FILE=/home/liam/.demo/admin_key
 
 [Install]
 WantedBy=default.target

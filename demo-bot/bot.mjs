@@ -15,18 +15,18 @@
  * discover your chat ID.
  */
 
-const TG_TOKEN = process.env.TG_BOT_TOKEN || "";
-const CHAT_ID = process.env.TG_CHAT_ID || "";
+const BOT_TOKEN = process.env.DEMO_APPROVAL_BOT_TOKEN || "";
+const CHAT_ID = process.env.DEMO_APPROVAL_CHAT_ID || "";
 const AUTH_URL = process.env.AUTH_URL || "http://127.0.0.1:8090";
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || "3000", 10);
-const ADMIN_KEY = process.env.DEMO_ADMIN_KEY || "";
+const ADMIN_KEY = process.env.DEMO_APPROVAL_ADMIN_KEY || "";
 
-if (!TG_TOKEN) {
-  console.error("FATAL: TG_BOT_TOKEN is required");
+if (!BOT_TOKEN) {
+  console.error("FATAL: DEMO_APPROVAL_BOT_TOKEN is required");
   process.exit(1);
 }
 
-const TG_API = `https://api.telegram.org/bot${TG_TOKEN}`;
+const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // ── Telegram helpers ───────────────────────────────────────────────────────
 
@@ -166,13 +166,13 @@ async function pollLoop() {
 
   // If no CHAT_ID, print discovery info every loop
   if (!CHAT_ID) {
-    console.log("[BOT] TG_CHAT_ID not set. Send a message to your bot, then check the console.");
+    console.error("[BOT] DEMO_APPROVAL_CHAT_ID not set. Send a message to your bot, then check the console.");
   }
 
   while (true) {
     try {
       // 1. Process Telegram updates (callback queries, /start, etc.)
-      if (TG_TOKEN) {
+      if (BOT_TOKEN) {
         const res = await fetch(
           `${TG_API}/getUpdates?offset=${offset}&timeout=10&allowed_updates=["callback_query","message"]`
         );
@@ -183,11 +183,11 @@ async function pollLoop() {
             if (!CHAT_ID && update.message?.chat?.id) {
               const cid = update.message.chat.id;
               console.log(`[BOT] 📬 Message from chat ID: ${cid}`);
-              console.log(`[BOT] Set TG_CHAT_ID=${cid} in sops/environment`);
+              console.log(`[BOT] Set DEMO_APPROVAL_CHAT_ID=${cid} in sops/environment`);
               console.log(`[BOT] Message: ${update.message.text || "(no text)"}`);
               await tg("sendMessage", {
                 chat_id: cid,
-                text: `Hello! Your chat ID is \`${cid}\`.\nSet \`TG_CHAT_ID=${cid}\` in the environment to receive demo approval requests.`,
+                text: `Hello! Your chat ID is \`${cid}\`.\nSet \`DEMO_APPROVAL_CHAT_ID=${cid}\` in the environment to receive demo approval requests.`,
                 parse_mode: "Markdown",
               });
             }

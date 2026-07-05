@@ -7,7 +7,7 @@
 # Usage:
 #   sops exec-env ~/secrets.enc.env './demo-setup.sh'
 #
-# Requires env vars: DEMO_ADMIN_KEY, TG_BOT_TOKEN, TG_CHAT_ID
+# Requires env vars: DEMO_APPROVAL_ADMIN_KEY, DEMO_APPROVAL_BOT_TOKEN, DEMO_APPROVAL_CHAT_ID
 # (set these in ~/secrets.enc.env)
 
 set -euo pipefail
@@ -38,7 +38,7 @@ start_service() {
 if [ -d "$BASE/token-auth-service/.venv" ]; then
   start_service "token-auth" 8090 "auth.pid" "auth.log" \
     "cd $BASE/token-auth-service && \
-     DEMO_ADMIN_KEY='${DEMO_ADMIN_KEY:-dev-key}' \
+     DEMO_APPROVAL_ADMIN_KEY='${DEMO_APPROVAL_ADMIN_KEY:-dev-key}' \
      DEMO_DB_PATH='$HOME/.demo/auth.db' \
      .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8090"
 else
@@ -46,16 +46,16 @@ else
 fi
 
 # ─── 2. Telegram Bot (polling, no port) ─────────────────────
-if [ -n "${TG_BOT_TOKEN:-}" ]; then
+if [ -n "${DEMO_APPROVAL_BOT_TOKEN:-}" ]; then
   start_service "demo-bot" "-" "bot.pid" "bot.log" \
     "cd $BASE/demo-bot && \
-     TG_BOT_TOKEN='${TG_BOT_TOKEN}' \
-     TG_CHAT_ID='${TG_CHAT_ID:-}' \
-     DEMO_ADMIN_KEY='${DEMO_ADMIN_KEY:-dev-key}' \
+     DEMO_APPROVAL_BOT_TOKEN='${DEMO_APPROVAL_BOT_TOKEN}' \
+     DEMO_APPROVAL_CHAT_ID='${DEMO_APPROVAL_CHAT_ID:-}' \
+     DEMO_APPROVAL_ADMIN_KEY='${DEMO_APPROVAL_ADMIN_KEY:-dev-key}' \
      AUTH_URL=http://127.0.0.1:8090 \
      node bot.mjs"
 else
-  log "[SKIP] demo-bot — TG_BOT_TOKEN not set"
+  log "[SKIP] demo-bot — DEMO_APPROVAL_BOT_TOKEN not set"
 fi
 
 # ─── 3. Agent Debate (:8006) ────────────────────────────────
@@ -77,8 +77,8 @@ log "Caddy reverse proxy: sudo caddy run --config $BASE/Caddyfile"
 log "CF tunnel:           systemctl --user start cloudflared-demo.service"
 echo ""
 log "Add to ~/secrets.enc.env:"
-log "  DEMO_ADMIN_KEY=<random-hex>"
-log "  TG_BOT_TOKEN=<telegram-bot-token>"
-log "  TG_CHAT_ID=<your-chat-id>"
+log "  DEMO_APPROVAL_ADMIN_KEY=<random-hex>"
+log "  DEMO_APPROVAL_BOT_TOKEN=<telegram-bot-token>"
+log "  DEMO_APPROVAL_CHAT_ID=<your-chat-id>"
 log ""
 log "Then run: sops exec-env ~/secrets.enc.env './demo-setup.sh'"
