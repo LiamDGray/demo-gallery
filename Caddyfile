@@ -1,0 +1,71 @@
+# Caddyfile for demo.liamdgray.com
+# Installed at: ~/src/demo/Caddyfile
+# Run with: caddy run --config ~/src/demo/Caddyfile
+
+demo.liamdgray.com {
+
+    # ── Auth Layer ──────────────────────────────────────────
+    # Every request is validated by the token-auth service
+    forward_auth localhost:8090 {
+        uri /verify
+        header_up X-Original-URI {uri}
+        header_up X-Original-Method {method}
+    }
+
+    # ── Public route: landing page ──────────────────────────
+    handle / {
+        root * /home/liam/src/demo/gallery
+        file_server
+    }
+
+    # ── Demo backends ───────────────────────────────────────
+    handle_path /geo-csg/* {
+        reverse_proxy localhost:8001
+    }
+
+    handle_path /voice-chat/* {
+        reverse_proxy localhost:8766
+    }
+
+    handle_path /name-check/* {
+        reverse_proxy localhost:8002
+    }
+
+    handle_path /realpeep/* {
+        reverse_proxy localhost:8003
+    }
+
+    handle_path /afterlife/* {
+        reverse_proxy localhost:8004
+    }
+
+    handle_path /artcall/* {
+        reverse_proxy localhost:8005
+    }
+
+    handle_path /agent-debate/* {
+        reverse_proxy localhost:8006
+    }
+
+    handle_path /behavioral/* {
+        reverse_proxy localhost:8007
+    }
+
+    handle_path /sigstead/* {
+        reverse_proxy localhost:8008
+    }
+
+    handle_path /loc3net/* {
+        reverse_proxy localhost:8009
+    }
+
+    # ── Admin: token management ─────────────────────────────
+    handle_path /admin/* {
+        reverse_proxy localhost:8090
+    }
+
+    # ── Error responses ─────────────────────────────────────
+    handle_errors {
+        respond "{err.status_code} {err.status_text}"
+    }
+}

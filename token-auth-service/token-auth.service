@@ -1,0 +1,14 @@
+[Unit]
+Description=Demo Token Auth Service
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/home/liam/src/demo/token-auth-service/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8090
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/home/liam/src/demo/token-auth-service
+Environment=DEMO_AUTH_SECRET_FILE=/home/liam/secrets/demo-auth-key
+
+[Install]
+WantedBy=default.target
