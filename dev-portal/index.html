@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Console — LiamDGray</title>
+<style>
+  :root { --bg: #0d1117; --fg: #e6edf3; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --yellow: #d29922; --red: #f85149; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+         background: var(--bg); color: var(--fg); line-height: 1.6; padding: 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.75rem; color: #f0f6fc; }
+  header .sub { color: #8b949e; font-size: 0.9rem; }
+  header .badge { display: inline-block; background: #1f2937; color: #9ca3af; border-radius: 4px; padding: 0.15rem 0.5rem; font-size: 0.75rem; margin-left: 0.5rem; }
+
+  .stats-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; flex: 1; text-align: center; }
+  .stat-card .num { font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+  .stat-card .label { font-size: 0.8rem; color: #8b949e; }
+
+  .section-title { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card { background: #161b22; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .card-head { padding: 1rem 1.25rem 0.5rem; display: flex; justify-content: space-between; align-items: flex-start; }
+  .card-head h3 { font-size: 1rem; }
+  .card-head h3 a { color: var(--accent); text-decoration: none; }
+  .card-head h3 a:hover { text-decoration: underline; }
+  .card-body { padding: 0 1.25rem 0.75rem; }
+  .card-body p { font-size: 0.85rem; color: #8b949e; }
+  .card-footer { padding: 0.75rem 1.25rem; border-top: 1px solid #1c2128; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+  .status-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+  .status-ready { background: #0f3b1e; color: var(--green); }
+  .status-building { background: #3b1f0f; color: var(--yellow); }
+  .status-planned { background: #1f2937; color: #9ca3af; }
+  .status-paused { background: #3b1f0f; color: var(--red); }
+
+  .link-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.75rem; border-radius: 4px;
+              font-size: 0.8rem; text-decoration: none; border: 1px solid var(--border); color: #9ca3af; background: #0d1117; }
+  .link-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .link-btn.primary { background: #238636; color: #fff; border-color: #238636; }
+  .link-btn.primary:hover { background: #2ea043; }
+  .link-btn.danger { border-color: var(--red); color: var(--red); }
+
+  .link-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .kanban-link { color: var(--yellow); }
+  .github-link { color: var(--fg); }
+  .docs-link { color: var(--green); }
+  .demo-link { color: var(--accent); }
+
+  .cfg-section { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .cfg-section h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+  .cfg-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; font-size: 0.85rem; }
+  .cfg-grid .key { color: #8b949e; font-family: monospace; }
+  .cfg-grid .val { color: var(--fg); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>⚙️ Dev Console <span class="badge">β</span></h1>
+      <div class="sub">Project dashboards + management interfaces &mdash; dev.liamdgray.com</div>
+    </div>
+    <div>
+      <a href="https://github.com/LiamDGray" class="link-btn" target="_blank">GitHub ↗</a>
+      <a href="https://news.ycombinator.com/submitted?id=liamdgray" class="link-btn" target="_blank">HN ↗</a>
+    </div>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="num" id="stat-ready">—</div><div class="label">Ready</div></div>
+    <div class="stat-card"><div class="num" id="stat-building">—</div><div class="label">In Progress</div></div>
+    <div class="stat-card"><div class="num" id="stat-planned">—</div><div class="label">Planned</div></div>
+    <div class="stat-card"><div class="num" id="stat-total">—</div><div class="label">Total Projects</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="card-head"><h3>📋 Quick Actions</h3></div>
+    <div class="card-body" style="display:flex;gap:0.75rem;flex-wrap:wrap;padding-bottom:1rem">
+      <a href="/blog/" class="link-btn primary">✏️ New Blog Post</a>
+      <a href="/intersect/" class="link-btn primary">🔬 Intersect Engine</a>
+      <a href="/realpeep/" class="link-btn primary">🛡️ RealPeep Admin</a>
+      <a href="https://demo.liamdgray.com" class="link-btn" target="_blank">🎪 Demo Gallery ↗</a>
+    </div>
+  </div>
+
+  <h2 class="section-title">🚀 Projects</h2>
+  <div class="project-grid" id="project-grid"></div>
+
+  <h2 class="section-title">🔧 Infrastructure</h2>
+  <div class="cfg-section">
+    <h3>Ingress</h3>
+    <div class="cfg-grid">
+      <span class="key">demo.liamdgray.com</span><span class="val">CF Tunnel → Caddy (:8080) → Token auth (:8090) → Backends</span>
+      <span class="key">dev.liamdgray.com</span><span class="val">CF Access SSO → CF Tunnel → Caddy (:8081) → Dev consoles</span>
+      <span class="key">blog.liamdgray.com</span><span class="val">CF Pages (Hugo static) + giscus + email subscribe</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROJECTS = [
+  {
+    id: 'intersect',
+    name: 'Intersect',
+    desc: 'Interest intersection engine. Submit any social profile → get their research interests + matching papers/code/models.',
+    status: 'building',
+    tags: ['Python', 'FastAPI', 'LLM', 'arXiv', 'GitHub'],
+    demo_url: '/intersect/',
+    dev_url: '/intersect/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/intersect',
+    docs_url: null,
+  },
+  {
+    id: 'realpeep',
+    name: 'RealPeep',
+    desc: 'Anonymous provenance & mesh consensus — ZK identity, hash chains, chirp CDMA broadcast.',
+    status: 'building',
+    tags: ['ZK', 'Dashboard', 'Circom', 'Python'],
+    demo_url: 'https://demo.liamdgray.com/realpeep/',
+    dev_url: '/realpeep/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/realpeep',
+    docs_url: 'https://github.com/LiamDGray/realpeep/blob/master/README.md',
+  },
+  {
+    id: 'geo-csg',
+    name: 'GeoCSG',
+    desc: 'Photo → editable CAD. 3D scan reconstruction via geometric algebra + TripoSR + pyRANSAC-3D.',
+    status: 'ready',
+    tags: ['FastAPI', 'SaaS', '3D', 'GPU'],
+    demo_url: 'https://demo.liamdgray.com/geo-csg/',
+    dev_url: '/geo-csg/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/geo-csg',
+    docs_url: 'https://github.com/LiamDGray/geo-csg#readme',
+  },
+  {
+    id: 'agent-debate',
+    name: 'Agent Debate',
+    desc: 'Watch two AI personas debate a proposition with an AI judge. Multi-round LLM debate.',
+    status: 'ready',
+    tags: ['MCP', 'LLM', 'Node.js'],
+    demo_url: 'https://demo.liamdgray.com/agent-debate/',
+    dev_url: '/agent-debate/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/agent-debate',
+    docs_url: null,
+  },
+  {
+    id: 'name-check',
+    name: 'Name Check',
+    desc: 'Check domain availability + USPTO trademark conflicts for product names.',
+    status: 'ready',
+    tags: ['Utility', 'Node.js'],
+    demo_url: 'https://demo.liamdgray.com/name-check/',
+    dev_url: '/name-check/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/name-conflict-check',
+    docs_url: null,
+  },
+  {
+    id: 'blog',
+    name: 'Blog',
+    desc: 'Static blog at blog.liamdgray.com. Hugo + dark theme + giscus + email subscribe.',
+    status: 'building',
+    tags: ['Hugo', 'CF Pages', 'Decap CMS'],
+    demo_url: 'https://blog.liamdgray.com',
+    dev_url: '/blog/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/blog',
+    docs_url: null,
+  },
+  {
+    id: 'voice-chat',
+    name: 'Voice Chat',
+    desc: 'WebSocket voice interface PWA — push-to-talk or VAD with TTS.',
+    status: 'building',
+    tags: ['PWA', 'WebSocket', 'TTS'],
+    demo_url: 'https://demo.liamdgray.com/voice-chat/',
+    dev_url: '/voice-chat/',
+    kanban_url: null,
+    github_url: null,
+    docs_url: null,
+  },
+  {
+    id: 'afterlife',
+    name: 'Afterlife',
+    desc: 'x402 micropayment proxy vending. Pay-per-use proxies with Ed25519 leases.',
+    status: 'building',
+    tags: ['Payments', 'Proxy', 'Ed25519'],
+    demo_url: 'https://demo.liamdgray.com/afterlife/',
+    dev_url: '/afterlife/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/afterlife',
+    docs_url: null,
+  },
+  {
+    id: 'artcall',
+    name: 'ArtCall',
+    desc: 'Self-healing scrapers for artist grant/residency calls.',
+    status: 'ready',
+    tags: ['Scraping', 'Python'],
+    demo_url: 'https://demo.liamdgray.com/artcall/',
+    dev_url: '/artcall/',
+    kanban_url: null,
+    github_url: null,
+    docs_url: null,
+  },
+  {
+    id: 'loc3net',
+    name: 'Loc3Net',
+    desc: 'Turn your phone into a residential IP exit node for cloud agents. BYOD stealth proxy.',
+    status: 'building',
+    tags: ['Networking', 'Stealth', 'Mobile'],
+    demo_url: 'https://demo.liamdgray.com/loc3net/',
+    dev_url: '/loc3net/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/loc3net',
+    docs_url: null,
+  },
+  {
+    id: 'behavioral',
+    name: 'Behavioral Mimic',
+    desc: 'Record your browsing, compute behavioral distributions, sample at automation time.',
+    status: 'building',
+    tags: ['Analysis', 'Browser', 'ML'],
+    demo_url: 'https://demo.liamdgray.com/behavioral/',
+    dev_url: '/behavioral/',
+    kanban_url: null,
+    github_url: null,
+    docs_url: null,
+  },
+  {
+    id: 'sigstead',
+    name: 'Sigstead',
+    desc: 'Cryptographic provenance for AI agent decisions.',
+    status: 'ready',
+    tags: ['Security', 'Crypto'],
+    demo_url: 'https://demo.liamdgray.com/sigstead/',
+    dev_url: '/sigstead/',
+    kanban_url: null,
+    github_url: 'https://github.com/LiamDGray/sigstead',
+    docs_url: null,
+  },
+];
+
+function statusBadge(status) {
+  const map = { ready: 'status-ready', building: 'status-building', planned: 'status-planned', paused: 'status-paused' };
+  const labels = { ready: '⭐ Ready', building: '🔨 In Progress', planned: '📋 Planned', paused: '⏸ Paused' };
+  return `<span class="status-badge ${map[status] || ''}">${labels[status] || status}</span>`;
+}
+
+function renderProjects() {
+  const grid = document.getElementById('project-grid');
+
+  const counts = { ready: 0, building: 0, planned: 0, total: PROJECTS.length };
+  PROJECTS.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
+
+  document.getElementById('stat-ready').textContent = counts.ready;
+  document.getElementById('stat-building').textContent = counts.building;
+  document.getElementById('stat-planned').textContent = counts.planned;
+  document.getElementById('stat-total').textContent = counts.total;
+
+  const sortOrder = { ready: 0, building: 1, planned: 2, paused: 3 };
+  const sorted = [...PROJECTS].sort((a, b) => (sortOrder[a.status] || 9) - (sortOrder[b.status] || 9));
+
+  grid.innerHTML = sorted.map(p => {
+    const links = [];
+
+    if (p.demo_url) {
+      links.push(`<a href="${p.demo_url}" class="link-btn demo-link" target="_blank">🌐 Demo ↗</a>`);
+    }
+    if (p.dev_url) {
+      links.push(`<a href="${p.dev_url}" class="link-btn">⚙️ Dev Console</a>`);
+    }
+    if (p.github_url) {
+      links.push(`<a href="${p.github_url}" class="link-btn github-link" target="_blank">📦 GitHub ↗</a>`);
+    }
+    if (p.docs_url) {
+      links.push(`<a href="${p.docs_url}" class="link-btn docs-link" target="_blank">📖 Docs ↗</a>`);
+    }
+    if (p.kanban_url) {
+      links.push(`<a href="${p.kanban_url}" class="link-btn kanban-link" target="_blank">📋 Kanban ↗</a>`);
+    }
+
+    // For in-progress/planned, link to kanban board
+    if ((p.status === 'building' || p.status === 'planned') && !p.kanban_url) {
+      links.push(`<span class="link-btn" style="opacity:0.5">📋 Kanban — TBD</span>`);
+    }
+
+    return `
+      <div class="card">
+        <div class="card-head">
+          <h3><a href="${p.dev_url || p.demo_url || '#'}">${p.name}</a></h3>
+          ${statusBadge(p.status)}
+        </div>
+        <div class="card-body">
+          <p>${p.desc}</p>
+          <div style="margin-top:0.5rem">
+            ${(p.tags || []).map(t => `<span class="status-badge" style="background:#1f2937;color:#9ca3af;margin-right:0.25rem">${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="card-footer">
+          ${links.join(' ')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+renderProjects();
+</script>
+</body>
+</html>

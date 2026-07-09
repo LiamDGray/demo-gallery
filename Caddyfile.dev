@@ -1,0 +1,90 @@
+# Caddyfile for dev.liamdgray.com
+# Installed at: ~/src/demo/Caddyfile.dev
+# Run with: caddy run --config ~/src/demo/Caddyfile.dev
+# Port 8081 — separate from demo gallery Caddy on port 8080
+
+dev.liamdgray.com {
+
+    # ── Blog editor (Decap CMS) ──────────────────────────────
+    # Served from the Hugo blog repo's static/admin/
+    handle_path /blog/* {
+        root * /home/liam/src/blog/static/admin
+        file_server
+    }
+
+    # ── Intersect engine ─────────────────────────────────────
+    handle_path /intersect/* {
+        reverse_proxy localhost:18010
+    }
+
+    # ── RealPeep dev console ─────────────────────────────────
+    handle_path /realpeep/* {
+        root * /home/liam/src/demo/dev-portal/demos/realpeep
+        file_server
+    }
+
+    # ── GeoCSG dev console ───────────────────────────────────
+    handle_path /geo-csg/* {
+        root * /home/liam/src/demo/dev-portal/demos/geo-csg
+        file_server
+    }
+
+    # ── Agent Debate dev console ─────────────────────────────
+    handle_path /agent-debate/* {
+        root * /home/liam/src/demo/dev-portal/demos/agent-debate
+        file_server
+    }
+
+    # ── Name Check dev console ───────────────────────────────
+    handle_path /name-check/* {
+        root * /home/liam/src/demo/dev-portal/demos/name-check
+        file_server
+    }
+
+    # ── Voice Chat dev console ───────────────────────────────
+    handle_path /voice-chat/* {
+        root * /home/liam/src/demo/dev-portal/demos/voice-chat
+        file_server
+    }
+
+    # ── Afterlife dev console ────────────────────────────────
+    handle_path /afterlife/* {
+        root * /home/liam/src/demo/dev-portal/demos/afterlife
+        file_server
+    }
+
+    # ── ArtCall dev console ──────────────────────────────────
+    handle_path /artcall/* {
+        root * /home/liam/src/demo/dev-portal/demos/artcall
+        file_server
+    }
+
+    # ── Loc3Net dev console ──────────────────────────────────
+    handle_path /loc3net/* {
+        root * /home/liam/src/demo/dev-portal/demos/loc3net
+        file_server
+    }
+
+    # ── Behavioral dev console ───────────────────────────────
+    handle_path /behavioral/* {
+        root * /home/liam/src/demo/dev-portal/demos/behavioral
+        file_server
+    }
+
+    # ── Sigstead dev console ─────────────────────────────────
+    handle_path /sigstead/* {
+        root * /home/liam/src/demo/dev-portal/demos/sigstead
+        file_server
+    }
+
+    # ── Dev Portal landing page ──────────────────────────────
+    handle {
+        root * /home/liam/src/demo/dev-portal
+        file_server
+    }
+
+    # ── Error responses ──────────────────────────────────────
+    handle_errors {
+        respond "{err.status_code} {err.status_text}"
+    }
+}

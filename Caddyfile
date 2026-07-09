@@ -10,6 +10,11 @@ demo.liamdgray.com {
         reverse_proxy localhost:8090
     }
 
+    # ── Intersect (public — free service for HN users) ──────
+    route /intersect/* {
+        reverse_proxy localhost:8010
+    }
+
     # ── Landing page (no token required) ─────────────────────
     handle {
         root * /home/liam/src/demo/gallery
