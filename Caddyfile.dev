@@ -5,6 +5,12 @@
 
 dev.liamdgray.com {
 
+    # ── Repo Manager (manage demo visibility) ─────────────────
+    handle_path /repo-manager/* {
+        root * /home/liam/src/demo/dev-portal/demos/repo-manager
+        file_server
+    }
+
     # ── Blog editor (Decap CMS) ──────────────────────────────
     # Served from the Hugo blog repo's static/admin/
     handle_path /blog/* {

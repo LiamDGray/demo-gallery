@@ -1,0 +1,100 @@
+{
+  "_comment": "Demo gallery configuration. Edit this to add/remove/exclude demos without touching HTML.",
+  "_meta": {
+    "description": "Controls which projects appear on demo.liamdgray.com and how they appear.",
+    "values": {
+      "status": "excluded | ready | building | planned | paused"
+    }
+  },
+  "demos": {
+    "intersect": {
+      "name": "Intersect",
+      "desc": "Interest intersection engine — submit any profile, discover matching papers & code.",
+      "status": "ready",
+      "tags": ["LLM", "arXiv", "Discovery"],
+      "port": 8010,
+      "public": true
+    },
+    "agent-debate": {
+      "name": "Agent Debate",
+      "desc": "Watch two AI personas debate a proposition with an AI judge.",
+      "status": "ready",
+      "tags": ["MCP", "LLM"],
+      "port": 8006,
+      "public": false
+    },
+    "name-check": {
+      "name": "Name Check",
+      "desc": "Check domain + USPTO trademark conflicts for product names.",
+      "status": "ready",
+      "tags": ["Utility"],
+      "port": 8002,
+      "public": false
+    },
+    "realpeep": {
+      "name": "RealPeep",
+      "desc": "Anonymous provenance & mesh consensus — ZK identity, hash chains.",
+      "status": "building",
+      "tags": ["ZK", "Dashboard", "Circom"],
+      "port": 8003,
+      "public": false
+    },
+    "voice-chat": {
+      "name": "Voice Chat",
+      "desc": "WebSocket voice interface PWA — push-to-talk or VAD with TTS.",
+      "status": "building",
+      "tags": ["PWA", "WebSocket", "TTS"],
+      "port": 8766,
+      "public": false
+    },
+    "afterlife": {
+      "name": "Afterlife",
+      "desc": "x402 micropayment proxy vending. Pay-per-use proxies with Ed25519 leases.",
+      "status": "building",
+      "tags": ["Payments", "Proxy"],
+      "port": 8004,
+      "public": false
+    },
+    "artcall": {
+      "name": "ArtCall",
+      "desc": "Self-healing scrapers for artist grant/residency calls.",
+      "status": "ready",
+      "tags": ["Scraping"],
+      "port": 8005,
+      "public": false
+    },
+    "behavioral": {
+      "name": "Behavioral Mimic",
+      "desc": "Record browsing, compute behavioral distributions, sample at automation time.",
+      "status": "building",
+      "tags": ["Analysis", "Browser"],
+      "port": 8007,
+      "public": false
+    },
+    "sigstead": {
+      "name": "Sigstead",
+      "desc": "Cryptographic provenance for AI agent decisions.",
+      "status": "ready",
+      "tags": ["Security", "Crypto"],
+      "port": 8008,
+      "public": false
+    },
+    "loc3net": {
+      "name": "Loc3Net",
+      "desc": "Turn your phone into a residential IP exit node for cloud agents.",
+      "status": "building",
+      "tags": ["Networking", "Stealth"],
+      "port": 8009,
+      "public": false
+    }
+  },
+  "exclusions": {
+    "geo-csg": {
+      "reason": "Removed per user request — SaaS pipeline under re-evaluation",
+      "removed_at": "2026-07-09"
+    },
+    "afterlife-js": {
+      "reason": "Deprecated — merged into main afterlife repo"
+    }
+  }
+}

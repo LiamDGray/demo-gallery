@@ -13,6 +13,7 @@ Endpoints:
 """
 
 import hashlib
+import json
 import os
 import sqlite3
 import time
@@ -295,6 +296,42 @@ def get_stats(admin=Depends(require_admin)):
         d["error_rate"] = round(d["errors"] / max(d["total_events"], 1) * 100, 1)
         stats.append(d)
     return stats
+
+
+# ─── Demo Configuration Management ────────────────────────────────────────────
+
+DEMO_CONFIG_PATH = os.environ.get(
+    "DEMO_CONFIG_PATH",
+    str(Path.home() / "src" / "demo" / "gallery" / "demos.json")
+)
+
+
+@app.get("/api/demos-config")
+def get_demos_config():
+    """Load the current demos.json configuration."""
+    try:
+        with open(DEMO_CONFIG_PATH, "r") as f:
+            return json.loads(f.read())
+    except FileNotFoundError:
+        return {"demos": {}, "exclusions": {}}
+    except Exception as e:
+        raise HTTPException(500, f"Failed to load config: {e}")
+
+
+@app.post("/api/save-demos-config")
+def save_demos_config(data: dict, request: Request):
+    """Save the demos.json configuration. Requires X-Admin-Key."""
+    key = request.headers.get("X-Admin-Key", "")
+    if key != SECRET:
+        raise HTTPException(403, "unauthorized")
+    try:
+        Path(DEMO_CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
+        with open(DEMO_CONFIG_PATH, "w") as f:
+            f.write(json.dumps(data, indent=2))
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(500, f"Failed to save config: {e}")
+
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 

@@ -22,16 +22,7 @@ demo.liamdgray.com {
     }
 
     # ── Token auth for all demo routes ───────────────────────
-    # Every request to /geo-csg, /name-check, etc. must have a valid token
-    route /geo-csg/* {
-        forward_auth localhost:8090 {
-            uri /verify
-            header_up X-Original-URI {uri}
-            header_up X-Original-Method {method}
-        }
-        reverse_proxy localhost:8001
-    }
-
+    # Every request to /name-check, etc. must have a valid token
     route /voice-chat/* {
         forward_auth localhost:8090 {
             uri /verify

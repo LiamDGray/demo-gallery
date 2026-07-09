@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repo → Demo Manager — Dev Console</title>
+<style>
+:root{--bg:#0d1117;--fg:#e6edf3;--accent:#58a6ff;--border:#30363d;--green:#3fb950;--yellow:#d29922;--red:#f85149;--gray:#8b949e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:2rem;line-height:1.6}
+.container{max-width:1200px;margin:0 auto}
+h1{font-size:1.75rem;margin-bottom:0.25rem}
+.sub{color:var(--gray);margin-bottom:1.5rem;font-size:0.9rem}
+.back-link{color:var(--accent);text-decoration:none;font-size:0.9rem;display:inline-block;margin-bottom:1rem}
+.back-link:hover{text-decoration:underline}
+.card{background:#161b22;border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden}
+.card-header{padding:0.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.card-body{padding:1rem}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{text-align:left;padding:0.5rem 0.75rem;color:var(--gray);font-weight:500;border-bottom:1px solid var(--border)}
+td{padding:0.5rem 0.75rem;border-bottom:1px solid #1c2128}
+tr:hover{background:#1c2128}
+.repo-name{font-family:monospace;font-size:0.85rem}
+.repo-name a{color:var(--accent);text-decoration:none}
+.repo-name a:hover{text-decoration:underline}
+.repo-desc{color:var(--gray);font-size:0.8rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:500}
+.status-excluded{background:#3b1f0f;color:var(--red)}
+.status-ready{background:#0f3b1e;color:var(--green)}
+.status-building{background:#3b1f0f;color:var(--yellow)}
+.status-planned{background:#1f2937;color:var(--gray)}
+select{padding:0.25rem 0.5rem;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:0.8rem}
+select:focus{border-color:var(--accent);outline:none}
+.btn{padding:0.3rem 0.75rem;border-radius:4px;font-size:0.8rem;border:1px solid var(--border);background:#0d1117;color:var(--gray);cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:#238636;border-color:#238636;color:#fff}
+.btn.primary:hover{background:#2ea043}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:#fff}
+.btn-group{display:flex;gap:0.35rem;flex-wrap:wrap}
+.toggle-btn{padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;border:1px solid var(--border);cursor:pointer;background:#0d1117;color:var(--gray)}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toggle-btn.excluded{border-color:var(--red);color:var(--red)}
+.toggle-btn.active.excluded{background:var(--red);color:#fff;border-color:var(--red)}
+.stats{display:flex;gap:1rem;margin-bottom:1rem}
+.stat-card{background:#161b22;border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;text-align:center;flex:1}
+.stat-card .num{font-size:1.25rem;font-weight:600}
+.stat-card .label{font-size:0.75rem;color:var(--gray)}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#161b22;border:1px solid var(--green);border-radius:8px;padding:1rem;display:none;z-index:100}
+.toast.show{display:block}
+.toast.error{border-color:var(--red)}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/" class="back-link">← Dev Console</a>
+<h1>📦 Repo → Demo Manager</h1>
+<p class="sub">Toggle whether each GitHub repo appears as a demo, and how. Changes save to demos.json.</p>
+
+<div class="stats" id="stats"></div>
+
+<div class="card">
+  <div class="card-header">
+    <span><strong>Status Legend</strong></span>
+    <span>
+      <span class="status-badge status-ready">⭐ Ready</span>
+      <span class="status-badge status-building" style="margin-left:0.5rem">🔨 Building</span>
+      <span class="status-badge status-planned" style="margin-left:0.5rem">📋 Planned</span>
+      <span class="status-badge status-excluded" style="margin-left:0.5rem">🚫 Excluded</span>
+      <span style="margin-left:0.5rem;color:var(--gray)">— (blank)</span>
+    </span>
+  </div>
+  <div class="card-body">
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Repo</th>
+            <th>Description</th>
+            <th>Language</th>
+            <th>Stars</th>
+            <th>Updated</th>
+            <th>Demo Status</th>
+            <th>Public Demo?</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="repo-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span><strong>📝 Edit demos.json Config</strong></span>
+    <button class="btn primary" onclick="saveConfig()">💾 Save Changes</button>
+  </div>
+  <div class="card-body">
+    <textarea id="config-editor" style="width:100%;min-height:400px;background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:0.75rem;font-family:monospace;font-size:0.8rem;resize:vertical"></textarea>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-text"></span></div>
+</div>
+
+<script>
+let config = { demos: {}, exclusions: {} };
+let allRepos = [];
+
+// Load initial config
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/demos-config');
+    if (r.ok) {
+      config = await r.json();
+      document.getElementById('config-editor').value = JSON.stringify(config, null, 2);
+    } else {
+      // Fallback to demos.json directly
+      const r2 = await fetch('/demos.json');
+      config = await r2.json();
+      document.getElementById('config-editor').value = JSON.stringify(config, null, 2);
+    }
+  } catch (e) {
+    console.error('Failed to load config:', e);
+  }
+}
+
+// Fetch all repos from GitHub
+async function loadRepos() {
+  try {
+    const r = await fetch('https://api.github.com/users/LiamDGray/repos?per_page=100&sort=updated');
+    if (!r.ok) throw new Error('GitHub API error');
+    allRepos = await r.json();
+    renderTable();
+  } catch (e) {
+    document.getElementById('repo-table').innerHTML =
+      `<tr><td colspan="8" style="color:var(--red);text-align:center;padding:2rem">
+        Failed to load repos from GitHub — ${e.message}
+      </td></tr>`;
+  }
+}
+
+function getDemoStatus(repoName) {
+  if (config.exclusions && config.exclusions[repoName]) return 'excluded';
+  if (config.demos && config.demos[repoName]) return config.demos[repoName].status || 'planned';
+  return '';
+}
+
+function isPublic(repoName) {
+  if (config.demos && config.demos[repoName]) return config.demos[repoName].public !== false;
+  return false;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('repo-table');
+  const sorted = [...allRepos].sort((a, b) => {
+    const aDemo = getDemoStatus(a.name) || 'zzz';
+    const bDemo = getDemoStatus(b.name) || 'zzz';
+    return aDemo.localeCompare(bDemo);
+  });
+
+  let counts = { ready: 0, building: 0, planned: 0, excluded: 0, on_request: 0, public: 0, total: sorted.length };
+
+  tbody.innerHTML = sorted.map(repo => {
+    const status = getDemoStatus(repo.name);
+    if (status === 'ready') counts.ready++;
+    else if (status === 'building') counts.building++;
+    else if (status === 'excluded') counts.excluded++;
+    else if (status) counts.planned++;
+    if (status && isPublic(repo.name)) counts.public++;
+    if (status && !isPublic(repo.name)) counts.on_request++;
+
+    const statusBadge = status === 'ready' ? 'status-ready' :
+                        status === 'building' ? 'status-building' :
+                        status === 'excluded' ? 'status-excluded' :
+                        status ? 'status-planned' : '';
+    const statusLabel = status === 'ready' ? '⭐ Ready' :
+                        status === 'building' ? '🔨 Building' :
+                        status === 'excluded' ? '🚫 Excluded' :
+                        status ? '📋 Planned' : '—';
+
+    const isPub = isPublic(repo.name);
+
+    return `<tr>
+      <td class="repo-name"><a href="${repo.html_url}" target="_blank">${repo.name}</a></td>
+      <td class="repo-desc">${repo.description || ''}</td>
+      <td>${repo.language || ''}</td>
+      <td>${repo.stargazers_count || 0}</td>
+      <td>${repo.updated_at ? repo.updated_at.slice(0,10) : ''}</td>
+      <td>
+        <select onchange="setStatus('${repo.name}', this.value)" data-repo="${repo.name}">
+          <option value="" ${!status ? 'selected' : ''}>— None —</option>
+          <option value="ready" ${status === 'ready' ? 'selected' : ''}>⭐ Ready</option>
+          <option value="building" ${status === 'building' ? 'selected' : ''}>🔨 Building</option>
+          <option value="planned" ${status === 'planned' ? 'selected' : ''}>📋 Planned</option>
+          <option value="excluded" ${status === 'excluded' ? 'selected' : ''}>🚫 Excluded</option>
+        </select>
+      </td>
+      <td>
+        <div class="btn-group">
+          <button class="toggle-btn ${isPub ? 'active' : ''}" onclick="setPublic('${repo.name}', true)">🔓 Public</button>
+          <button class="toggle-btn ${!isPub && status ? 'active' : ''}" onclick="setPublic('${repo.name}', false)">🔒 On Request</button>
+        </div>
+      </td>
+      <td>
+        <button class="btn" onclick="openDev('${repo.name}')">⚙️ Dev</button>
+        ${isPub ? `<button class="btn primary" onclick="openDemo('${repo.name}')">🌐 Demo</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="num" style="color:var(--green)">${counts.ready}</div><div class="label">⭐ Ready</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--yellow)">${counts.building}</div><div class="label">🔨 Building</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--gray)">${counts.planned}</div><div class="label">📋 Planned</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--red)">${counts.excluded}</div><div class="label">🚫 Excluded</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--accent)">${counts.public}</div><div class="label">🔓 Public</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--yellow)">${counts.on_request}</div><div class="label">🔒 On Request</div></div>
+    <div class="stat-card"><div class="num">${counts.total}</div><div class="label">Total Repos</div></div>
+  `;
+}
+
+function setStatus(repoName, status) {
+  // Move between demos and exclusions
+  if (status === 'excluded') {
+    delete config.demos[repoName];
+    config.exclusions[repoName] = { reason: 'Managed from Repo Dashboard', removed_at: new Date().toISOString().slice(0,10) };
+  } else if (status) {
+    delete config.exclusions[repoName];
+    if (!config.demos[repoName]) {
+      config.demos[repoName] = { name: repoName.replace(/-/g, ' ').replace(/\b\w/g, l=>l.toUpperCase()), desc: '', status: status, tags: [], port: null, public: false };
+    } else {
+      config.demos[repoName].status = status;
+    }
+  } else {
+    delete config.demos[repoName];
+    delete config.exclusions[repoName];
+  }
+  document.getElementById('config-editor').value = JSON.stringify(config, null, 2);
+  renderTable();
+}
+
+function setPublic(repoName, isPub) {
+  if (!config.demos[repoName]) return;
+  config.demos[repoName].public = isPub;
+  document.getElementById('config-editor').value = JSON.stringify(config, null, 2);
+  renderTable();
+}
+
+function openDev(repoName) {
+  window.location.href = `/${repoName}/`;
+}
+
+function openDemo(repoName) {
+  window.open(`https://demo.liamdgray.com/${repoName}/`, '_blank');
+}
+
+async function saveConfig() {
+  try {
+    const newConfig = JSON.parse(document.getElementById('config-editor').value);
+    // POST to save endpoint
+    const r = await fetch('/api/save-demos-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newConfig),
+    });
+    if (r.ok) {
+      config = newConfig;
+      showToast('✅ Config saved!');
+      renderTable();
+    } else {
+      const err = await r.text();
+      showToast('❌ Save failed: ' + err, true);
+    }
+  } catch (e) {
+    showToast('❌ Invalid JSON: ' + e.message, true);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+loadConfig();
+loadRepos();
+</script>
+</body>
+</html>

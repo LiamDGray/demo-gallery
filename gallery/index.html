@@ -23,11 +23,13 @@
   .tag { display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
          background: #1f2937; color: #9ca3af; margin-right: 0.25rem; margin-bottom: 0.25rem; }
   .tag.ready { background: #0f3b1e; color: #3fb950; }
-  .tag.build { background: #3b1f0f; color: #d29922; }
+  .tag.building { background: #3b1f0f; color: #d29922; }
   .status { color: #8b949e; font-size: 0.8rem; }
   .hero { text-align: center; padding: 3rem 0 1rem; }
   .hero h1 { font-size: 2.5rem; }
   .hero .sub { font-size: 1rem; }
+  .loading { text-align: center; padding: 3rem; color: #8b949e; }
+  .empty { text-align: center; padding: 3rem; color: #8b949e; }
 
   .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
   .modal-backdrop.open { display: flex; align-items: center; justify-content: center; }
@@ -69,6 +71,8 @@
 
 <div class="demo-grid" id="demo-grid"></div>
 
+<div class="loading" id="loading">Loading demos...</div>
+
 <!-- Request Modal -->
 <div class="modal-backdrop" id="modal">
   <div class="modal">
@@ -92,164 +96,190 @@
 </div>
 
 <script>
-  const DEMOS = [
-    { id: 'geo-csg',     name: 'GeoCSG',         desc: 'Photo → editable CAD. 3D scan reconstruction via geometric algebra.',             status: 'ready', tags: ['FastAPI', 'SaaS'] },
-    { id: 'intersect',   name: 'Intersect',      desc: 'Interest intersection engine — submit any profile, discover matching papers & code.', status: 'ready', tags: ['LLM', 'arXiv', 'Discovery'] },
-    { id: 'agent-debate',name: 'Agent Debate',   desc: 'Watch two AI personas debate a proposition with an AI judge.',                     status: 'ready', tags: ['MCP', 'LLM'] },
-    { id: 'name-check',  name: 'Name Check',     desc: 'Check domain + USPTO trademark conflicts for your product name.',                   status: 'ready', tags: ['Utility'] },
-    { id: 'voice-chat',  name: 'Voice Chat',     desc: 'WebSocket voice interface PWA — push-to-talk or VAD with TTS.',                   status: 'build', tags: ['PWA', 'WebSocket'] },
-    { id: 'realpeep',    name: 'RealPeep',       desc: 'Anonymous provenance & mesh consensus — ZK identity, hash chains.',               status: 'build', tags: ['Dashboard', 'ZK'] },
-    { id: 'afterlife',   name: 'Afterlife',      desc: 'x402 micropayment proxy vending. Pay-per-use proxies with Ed25519 leases.',        status: 'build', tags: ['Payments'] },
-    { id: 'artcall',     name: 'ArtCall',        desc: 'Self-healing scrapers for artist grant/residency calls.',                           status: 'ready', tags: ['Scraping'] },
-    { id: 'behavioral',  name: 'Behavioral Mim.', desc: 'Record your browsing, compute behavioral distributions, sample at automation time.', status: 'build', tags: ['Analysis'] },
-    { id: 'sigstead',    name: 'Sigstead',       desc: 'Cryptographic provenance for AI agent decisions.',                                  status: 'ready', tags: ['Security'] },
-    { id: 'loc3net',     name: 'Loc3Net',        desc: 'Turn your phone into a residential IP exit node for cloud agents.',                 status: 'build', tags: ['Networking'] },
-  ];
+let config = { demos: {}, exclusions: {} };
 
-  let currentDemo = null;
-  let pollInterval = null;
+async function loadConfig() {
+  try {
+    const r = await fetch('/demos.json');
+    if (r.ok) {
+      config = await r.json();
+    }
+  } catch (e) {
+    console.warn('Could not load demos.json, using hardcoded fallback');
+  }
+  renderGallery();
+}
 
-  function renderGallery() {
-    const grid = document.getElementById('demo-grid');
-    grid.innerHTML = DEMOS.map(d => {
-      const statusText = d.status === 'ready' ? '⭐ Ready' : '🔨 Building';
-      return `
-        <div class="card">
-          <div class="card-header">
-            <h2>${d.name}</h2>
-            <p>${d.desc}</p>
-            <div>
-              <span class="tag ${d.status}">${statusText}</span>
-              ${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-primary" onclick="openModal('${d.id}')">🔑 Request Access</button>
+function getDemos() {
+  const demos = [];
+  for (const [id, demo] of Object.entries(config.demos || {})) {
+    if (!demo.status || demo.status === 'excluded') continue;
+    demos.push({ id, ...demo });
+  }
+  // Sort: ready first, then building, then planned
+  const order = { ready: 0, building: 1, planned: 2 };
+  demos.sort((a, b) => (order[a.status] || 9) - (order[b.status] || 9));
+  return demos;
+}
+
+function renderGallery() {
+  const grid = document.getElementById('demo-grid');
+  const loading = document.getElementById('loading');
+  const demos = getDemos();
+
+  loading.style.display = 'none';
+
+  if (demos.length === 0) {
+    grid.innerHTML = '<div class="empty">No demos available yet. Check back soon.</div>';
+    return;
+  }
+
+  grid.innerHTML = demos.map(d => {
+    const statusText = d.status === 'ready' ? '⭐ Ready' : '🔨 Building';
+    const href = d.public ? `/${d.id}/` : '#';
+    return `
+      <div class="card">
+        <div class="card-header">
+          <h2>${href !== '#' ? `<a href="${href}">${d.name}</a>` : d.name}</h2>
+          <p>${d.desc}</p>
+          <div>
+            <span class="tag ${d.status}">${statusText}</span>
+            ${(d.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
           </div>
         </div>
-      `;
-    }).join('');
-  }
+        <div class="card-actions">
+          ${d.public
+            ? `<a href="/${d.id}/" class="btn btn-primary">🚀 Open Demo</a>`
+            : `<button class="btn btn-primary" onclick="openModal('${d.id}')">🔑 Request Access</button>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-  function openModal(demoId) {
-    currentDemo = demoId;
-    const demo = DEMOS.find(d => d.id === demoId);
-    document.getElementById('modal-title').textContent = `🔑 Request Access: ${demo.name}`;
-    document.getElementById('modal-demo-name').textContent = demo.desc;
-    document.getElementById('modal-email').value = '';
-    document.getElementById('modal-reason').value = '';
-    document.getElementById('modal-status').style.display = 'none';
-    document.getElementById('modal-submit').disabled = false;
-    document.getElementById('modal-submit').textContent = 'Request Access';
-    document.getElementById('modal').classList.add('open');
-  }
+let currentDemo = null;
+let pollInterval = null;
 
-  function closeModal() {
-    document.getElementById('modal').classList.remove('open');
-    currentDemo = null;
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
+function openModal(demoId) {
+  currentDemo = demoId;
+  const demo = config.demos[demoId] || {};
+  document.getElementById('modal-title').textContent = `🔑 Request Access: ${demo.name}`;
+  document.getElementById('modal-demo-name').textContent = demo.desc || '';
+  document.getElementById('modal-email').value = '';
+  document.getElementById('modal-reason').value = '';
+  document.getElementById('modal-status').style.display = 'none';
+  document.getElementById('modal-submit').disabled = false;
+  document.getElementById('modal-submit').textContent = 'Request Access';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  currentDemo = null;
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+}
+
+async function submitRequest() {
+  const email = document.getElementById('modal-email').value.trim();
+  const reason = document.getElementById('modal-reason').value.trim();
+  const btn = document.getElementById('modal-submit');
+  btn.disabled = true;
+  btn.textContent = 'Requesting...';
+
+  try {
+    const res = await fetch('/api/request-demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ demo_id: currentDemo, email, reason }),
+    });
+    const data = await res.json();
+    if (data.request_id) {
+      showStatus('pending', data.request_id);
+      pollInterval = setInterval(() => pollStatus(data.request_id), 2000);
+    } else {
+      showError(data.error || 'Request failed');
     }
+  } catch (e) {
+    showError(e.message);
   }
+}
 
-  async function submitRequest() {
-    const email = document.getElementById('modal-email').value.trim();
-    const reason = document.getElementById('modal-reason').value.trim();
-    const btn = document.getElementById('modal-submit');
-    btn.disabled = true;
-    btn.textContent = 'Requesting...';
-
-    try {
-      const res = await fetch('/api/request-demo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ demo_id: currentDemo, email, reason }),
-      });
-      const data = await res.json();
-      if (data.request_id) {
-        showStatus('pending', data.request_id);
-        pollInterval = setInterval(() => pollStatus(data.request_id), 2000);
-      } else {
-        showError(data.error || 'Request failed');
-      }
-    } catch (e) {
-      showError(e.message);
-    }
-  }
-
-  function showStatus(status, requestId) {
-    const el = document.getElementById('modal-status');
-    el.style.display = 'block';
-    if (status === 'pending') {
-      el.style.background = '#3b1f0f';
-      el.style.border = '1px solid #d29922';
-      el.innerHTML = `<p style="color:#d29922;">⏳ Request sent. Waiting for approval... <span id="poll-dots"></span></p>`;
-      animateDots();
-    } else if (status === 'approved') {
-      el.style.background = '#0f3b1e';
-      el.style.border = '1px solid #3fb950';
-      el.innerHTML = `<p style="color:#3fb950;">✅ Approved! <a href="${status}" id="access-link" style="color:#58a6ff;" target="_blank">Enter demo →</a></p>`;
-      document.getElementById('modal-submit').textContent = '✅ Access Granted';
-      setTimeout(() => { window.open(status, '_blank'); }, 500);
-    } else if (status === 'denied') {
-      el.style.background = '#3b1f0f';
-      el.style.border = '1px solid #f85149';
-      el.innerHTML = `<p style="color:#f85149;">❌ Request denied.</p>`;
-      document.getElementById('modal-submit').textContent = 'Try Again';
-    }
-  }
-
-  function showError(msg) {
-    const el = document.getElementById('modal-status');
-    el.style.display = 'block';
+function showStatus(status, requestId) {
+  const el = document.getElementById('modal-status');
+  el.style.display = 'block';
+  if (status === 'pending') {
+    el.style.background = '#3b1f0f';
+    el.style.border = '1px solid #d29922';
+    el.innerHTML = `<p style="color:#d29922;">⏳ Request sent. Waiting for approval... <span id="poll-dots"></span></p>`;
+    animateDots();
+  } else if (status === 'approved') {
+    el.style.background = '#0f3b1e';
+    el.style.border = '1px solid #3fb950';
+    el.innerHTML = `<p style="color:#3fb950;">✅ Approved! <a href="${status}" id="access-link" style="color:#58a6ff;" target="_blank">Enter demo →</a></p>`;
+    document.getElementById('modal-submit').textContent = '✅ Access Granted';
+    setTimeout(() => { window.open(status, '_blank'); }, 500);
+  } else if (status === 'denied') {
     el.style.background = '#3b1f0f';
     el.style.border = '1px solid #f85149';
-    el.innerHTML = `<p style="color:#f85149;">❌ ${msg}</p>`;
-    document.getElementById('modal-submit').disabled = false;
-    document.getElementById('modal-submit').textContent = 'Retry';
+    el.innerHTML = `<p style="color:#f85149;">❌ Request denied.</p>`;
+    document.getElementById('modal-submit').textContent = 'Try Again';
   }
+}
 
-  async function pollStatus(requestId) {
-    try {
-      const res = await fetch(`/api/request-status/${requestId}`);
-      const data = await res.json();
-      if (data.status === 'approved') {
-        clearInterval(pollInterval);
-        pollInterval = null;
-        showStatus(data.url, requestId);
-        showToast('✅ Access granted! Opening demo...');
-      } else if (data.status === 'denied') {
-        clearInterval(pollInterval);
-        pollInterval = null;
-        showStatus('denied', requestId);
-        showToast('❌ Access denied.', true);
-      }
-    } catch {
-      // keep polling
+function showError(msg) {
+  const el = document.getElementById('modal-status');
+  el.style.display = 'block';
+  el.style.background = '#3b1f0f';
+  el.style.border = '1px solid #f85149';
+  el.innerHTML = `<p style="color:#f85149;">❌ ${msg}</p>`;
+  document.getElementById('modal-submit').disabled = false;
+  document.getElementById('modal-submit').textContent = 'Retry';
+}
+
+async function pollStatus(requestId) {
+  try {
+    const res = await fetch(`/api/request-status/${requestId}`);
+    const data = await res.json();
+    if (data.status === 'approved') {
+      clearInterval(pollInterval);
+      pollInterval = null;
+      showStatus(data.url, requestId);
+      showToast('✅ Access granted! Opening demo...');
+    } else if (data.status === 'denied') {
+      clearInterval(pollInterval);
+      pollInterval = null;
+      showStatus('denied', requestId);
+      showToast('❌ Access denied.', true);
     }
+  } catch {
+    // keep polling
   }
+}
 
-  function animateDots() {
-    let dots = 0;
-    const el = document.getElementById('poll-dots');
-    if (!el) return;
-    setInterval(() => {
-      dots = (dots + 1) % 4;
-      if (el) el.textContent = '.'.repeat(dots);
-    }, 500);
-  }
+function animateDots() {
+  let dots = 0;
+  const el = document.getElementById('poll-dots');
+  if (!el) return;
+  setInterval(() => {
+    dots = (dots + 1) % 4;
+    if (el) el.textContent = '.'.repeat(dots);
+  }, 500);
+}
 
-  function showToast(msg, isError = false) {
-    const toast = document.getElementById('toast');
-    const text = document.getElementById('toast-text');
-    text.textContent = msg;
-    toast.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { toast.classList.remove('show'); }, 5000);
-  }
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  const text = document.getElementById('toast-text');
+  text.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { toast.classList.remove('show'); }, 5000);
+}
 
-  // Init
-  renderGallery();
+// Load config and render
+loadConfig();
 </script>
 </body>
 </html>
