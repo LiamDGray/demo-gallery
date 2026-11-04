@@ -96,6 +96,17 @@
 </div>
 
 <script>
+// Universal API routing helper for path-prefix mounts (e.g. /gallery)
+const pathParts = window.location.pathname.split('/');
+const appPrefix = pathParts.includes('gallery') ? window.location.pathname.substring(0, window.location.pathname.indexOf('/gallery') + 8) : '';
+const _nativeFetch = window.fetch;
+window.fetch = function(resource, init) {
+  if (typeof resource === 'string' && resource.startsWith('/') && appPrefix && !resource.startsWith(appPrefix + '/')) {
+    resource = appPrefix + resource;
+  }
+  return _nativeFetch(resource, init);
+};
+
 let config = { demos: {}, exclusions: {} };
 
 async function loadConfig() {
