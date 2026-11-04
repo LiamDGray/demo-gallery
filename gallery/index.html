@@ -122,10 +122,16 @@ function getDemos() {
   return demos;
 }
 
+function isLocalhost() {
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost');
+}
+
 function renderGallery() {
   const grid = document.getElementById('demo-grid');
   const loading = document.getElementById('loading');
   const demos = getDemos();
+  const local = isLocalhost();
 
   loading.style.display = 'none';
 
@@ -136,7 +142,8 @@ function renderGallery() {
 
   grid.innerHTML = demos.map(d => {
     const statusText = d.status === 'ready' ? '⭐ Ready' : '🔨 Building';
-    const href = d.public ? `/${d.id}/` : '#';
+    const isOpenable = d.public || local;
+    const href = isOpenable ? `/${d.id}/` : '#';
     return `
       <div class="card">
         <div class="card-header">
@@ -145,10 +152,11 @@ function renderGallery() {
           <div>
             <span class="tag ${d.status}">${statusText}</span>
             ${(d.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+            ${local && !d.public ? '<span class="tag" style="background:#1f3d2f;color:#3fb950;border-color:#238636;">Local Bypass</span>' : ''}
           </div>
         </div>
         <div class="card-actions">
-          ${d.public
+          ${isOpenable
             ? `<a href="/${d.id}/" class="btn btn-primary">🚀 Open Demo</a>`
             : `<button class="btn btn-primary" onclick="openModal('${d.id}')">🔑 Request Access</button>`
           }

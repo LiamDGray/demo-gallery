@@ -13,6 +13,7 @@ Endpoints:
 """
 
 import hashlib
+import ipaddress
 import json
 import os
 import sqlite3
@@ -112,9 +113,23 @@ def require_admin(key: str = Header(None, alias="X-Admin-Key")):
     if not key or key != SECRET:
         raise HTTPException(403, "unauthorized")
 
+SLIRP_GATEWAY_NET = ipaddress.ip_network("10.0.2.0/24")
+
+def is_loopback_ip(ip_str: str) -> bool:
+    """Check if the given IP address is a trusted local loopback address or host gateway."""
+    if not ip_str:
+        return False
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_loopback or (ip in SLIRP_GATEWAY_NET)
+    except ValueError:
+        return False
+
 def get_ip(request: Request) -> str:
     forwarded = request.headers.get("X-Forwarded-For", "")
-    return forwarded.split(",")[0].strip() or request.client.host or ""
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else ""
 
 # ─── Token endpoints ─────────────────────────────────────────────────────────
 
@@ -142,6 +157,10 @@ def issue_token(req: IssueRequest, admin=Depends(require_admin)):
 
 @app.get("/verify")
 def verify(request: Request):
+    client_ip = get_ip(request)
+    if is_loopback_ip(client_ip):
+        return Response(status_code=200, content="ok")
+
     token = request.headers.get("X-Original-Token") or request.query_params.get("token", "")
     uri = request.headers.get("X-Original-URI", "/")
 
